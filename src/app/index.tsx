@@ -1,98 +1,106 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { StatusBar } from 'expo-status-bar';
+import { getNotes, Note } from '../services/notesStore';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const themeStyles = isDark ? darkTheme : lightTheme;
+
+  useFocusEffect(
+    useCallback(() => {
+      setNotes(getNotes());
+    }, [])
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView style={[styles.safe, { backgroundColor: themeStyles.bg }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={[styles.container, { backgroundColor: themeStyles.bg }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: themeStyles.text }]}>Notesippy</Text>
+        </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={[styles.emptyTitle, { color: themeStyles.text }]}>No notes</Text>
+              <Text style={styles.emptySub}>Tap + to create a minimal note.</Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: themeStyles.cardBg, borderColor: themeStyles.cardBorder }]}
+              onPress={() => router.push(`/note/${item.id}`)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.cardTop}>
+                <Text style={[styles.title, { color: themeStyles.text }]}>{item.title}</Text>
+                {item.isUrgent && <View style={[styles.badge, { backgroundColor: themeStyles.badgeBg }]} />}
+              </View>
+              <Text style={[styles.preview, { color: themeStyles.previewText }]} numberOfLines={2}>
+                {item.content || 'No content'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <TouchableOpacity 
+          style={[styles.fab, { backgroundColor: themeStyles.fabBg }]} 
+          onPress={() => router.push('/note/new')}
+        >
+          <Text style={[styles.fabText, { color: themeStyles.fabText }]}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
+const darkTheme = {
+  bg: '#000000',
+  text: '#FFFFFF',
+  cardBg: '#09090B',
+  cardBorder: '#27272A',
+  previewText: '#A1A1AA',
+  badgeBg: '#FFFFFF',
+  fabBg: '#FFFFFF',
+  fabText: '#000000',
+};
+
+const lightTheme = {
+  bg: '#F4F4F5',
+  text: '#09090B',
+  cardBg: '#FFFFFF',
+  cardBorder: '#E4E4E7',
+  previewText: '#52525B',
+  badgeBg: '#09090B',
+  fabBg: '#09090B',
+  fabText: '#FFFFFF',
+};
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  safe: { flex: 1 },
+  container: { flex: 1, paddingHorizontal: 20 },
+  header: { paddingVertical: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -1 },
+  list: { paddingBottom: 100 },
+  card: { borderWidth: 1, padding: 18, borderRadius: 14, marginBottom: 12 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  title: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  badge: { width: 8, height: 8, borderRadius: 4 },
+  preview: { fontSize: 14, lineHeight: 20 },
+  empty: { alignItems: 'center', marginTop: 120 },
+  emptyTitle: { fontSize: 18, fontWeight: '700' },
+  emptySub: { color: '#71717A', fontSize: 13, marginTop: 4 },
+  fab: { position: 'absolute', bottom: 30, right: 20, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  fabText: { fontSize: 28, fontWeight: '400', marginTop: -2 },
 });
