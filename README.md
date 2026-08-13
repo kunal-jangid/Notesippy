@@ -1,56 +1,77 @@
-# Welcome to your Expo app 👋
+# Notesippy 📝⚡
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A sleek, premium, minimal note-taking mobile application built with **React Native** and **Expo SDK 57**. Designed for speed, utility, and absolute simplicity.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+- **Sleek & Minimal UI**: A beautifully clean interface that supports system Dark and Light modes.
+- **Ultra-Fast Local Storage**: Powered by [`react-native-mmkv`](https://github.com/mrousavy/react-native-mmkv) for high-performance, synchronous data reads and writes.
+- **Home Screen Android Widgets**: Fully integrated home screen widget using [`react-native-android-widget`](https://github.com/svbutko/react-native-android-widget), displaying your notes grid directly on your Android launcher.
+- **Rich Notifications**: Rich, local notifications built on [`@notifee/react-native`](https://notifee.app) for task reminders and alerts.
+- **Modern Routing**: Utilizes Expo Router's file-based navigation system under the `src/` directory.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 📂 Project Structure
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+notesippy/
+├── assets/             # Branding assets, icons, and splash screens
+├── src/
+│   ├── app/            # Expo Router page routes (index, explore, note/[id], widget-select)
+│   ├── components/     # Reusable UI components
+│   ├── constants/      # App constants (Colors, styles, configurations)
+│   ├── hooks/          # Custom React hooks
+│   ├── services/       # Core business logic & storage providers (e.g., notesStore.ts)
+│   └── widgets/        # React Native Android Widget layouts and entrypoints
+├── app.json            # Expo configuration
+├── package.json        # Project scripts and dependency declarations
+└── tsconfig.json       # TypeScript compiler settings
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-### Other setup steps
+## 🚀 Getting Started
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### Prerequisites
 
-## Learn more
+- Ensure you have **Node.js** and **npm** installed.
+- Ensure your environment is configured for React Native / Expo development (JDK, Android SDK/Android Studio for Android, or Xcode for iOS if on macOS).
 
-To learn more about developing your project with Expo, look at the following resources:
+### 1. Install Dependencies
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm install
+```
 
-## Join the community
+### 2. Run the Development Server
 
-Join our community of developers creating universal apps.
+Start the local Expo bundler:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm run start
+```
+
+### 3. Run on Emulator / Device
+
+Run directly on your target platform to build and test:
+
+- **Android**:
+  ```bash
+  npm run android
+  ```
+- **iOS**:
+  ```bash
+  npm run ios
+  ```
+
+---
+
+## 🧩 Android Widgets Integration
+
+This project configures a custom native Android Widget `NotesGridWidget`. 
+
+- **Custom Native Plugin**: Defined in [`notifee-plugin.js`](file:///D:/projects/notesippy/notifee-plugin.js) and configured under the `plugins` field of [`app.json`](file:///D:/projects/notesippy/app.json).
+- **Preview / Selection**: Access the widget configuration through the `/widget-select` screen inside the application.
