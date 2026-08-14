@@ -9,6 +9,7 @@ export interface Note {
     content: string;
     isUrgent: boolean;
     updatedAt: number;
+    reminderPeriod?: number;
 }
 
 const NOTES_KEY = 'notesippy_user_notes';

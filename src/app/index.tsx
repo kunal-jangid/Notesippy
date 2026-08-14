@@ -44,12 +44,11 @@ export default function HomeScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.cardTop}>
-                <Text style={[styles.title, { color: themeStyles.text }]}>{item.title}</Text>
-                {item.isUrgent && <View style={[styles.badge, { backgroundColor: themeStyles.badgeBg }]} />}
+                <Text style={[styles.title, { color: themeStyles.text, flex: 1 }]} numberOfLines={3}>
+                  {item.content || 'No content'}
+                </Text>
+                {item.isUrgent && <View style={[styles.badge, { backgroundColor: themeStyles.badgeBg, marginLeft: 8 }]} />}
               </View>
-              <Text style={[styles.preview, { color: themeStyles.previewText }]} numberOfLines={2}>
-                {item.content || 'No content'}
-              </Text>
             </TouchableOpacity>
           )}
         />

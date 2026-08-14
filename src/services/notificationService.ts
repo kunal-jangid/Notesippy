@@ -1,3 +1,4 @@
+import { NativeModules, Platform } from 'react-native';
 import notifee, {
   AndroidImportance,
   AndroidVisibility,
@@ -6,22 +7,14 @@ import notifee, {
 } from '@notifee/react-native';
 import { Note } from './notesStore';
 
+const { SamsungNowBar } = NativeModules;
+
 export const NOWBAR_NOTIFICATION_ID = 'nowbar-live-note';
 const NOWBAR_PINNED_KEY = 'notesippy_pinned_nowbar_note_id';
 
 export async function showLockscreenLiveNote(note: Note) {
   // 1. Ensure runtime notification permission is granted
   await notifee.requestPermission();
-
-  // 2. Create high-priority channel
-  const channelId = await notifee.createChannel({
-    id: 'nowbar-live-capsule-v4',
-    name: 'Live Lockscreen Pill',
-    importance: AndroidImportance.HIGH,
-    visibility: AndroidVisibility.PUBLIC,
-    vibration: false,
-    sound: 'default',
-  });
 
   // Track the note currently shown on the lockscreen in MMKV
   try {
@@ -31,22 +24,43 @@ export async function showLockscreenLiveNote(note: Note) {
     console.warn('Storage set failed in notificationService:', e);
   }
 
-  // 3. Display ongoing live activity notification
+  // 2. If running on Android and SamsungNowBar native module is available, use it
+  if (Platform.OS === 'android' && SamsungNowBar) {
+    const durationMs = (note.reminderPeriod || 15) * 60 * 1000;
+    const endTimeMillis = Date.now() + durationMs;
+    SamsungNowBar.showLiveNote(
+      note.content || 'No content',
+      '',
+      endTimeMillis
+    );
+    return;
+  }
+
+  // 3. Fallback to standard Notifee channel and notification configuration
+  const channelId = await notifee.createChannel({
+    id: 'nowbar-live-capsule-v4',
+    name: 'Live Lockscreen Pill',
+    importance: AndroidImportance.HIGH,
+    visibility: AndroidVisibility.PUBLIC,
+    vibration: false,
+    sound: 'default',
+  });
+
   await notifee.displayNotification({
     id: NOWBAR_NOTIFICATION_ID, // Fixed ID to ensure only one note is pinned
-    title: note.title || 'Untitled Note',
-    body: note.content || 'Tap to view note',
+    title: note.content || 'No content',
+    body: undefined,
     data: { noteId: note.id },
     android: {
       channelId,
       ongoing: true, // Non-dismissible
       autoCancel: false, // Keeps it pinned
       asForegroundService: true, // System-wide foreground process
-      category: AndroidCategory.CALL, // Triggers System Live Capsule / Samsung Now Bar
+      category: AndroidCategory.NAVIGATION, // Triggers System Live Capsule / Samsung Now Bar
       visibility: AndroidVisibility.PUBLIC,
       showChronometer: true,
       chronometerDirection: 'down',
-      timestamp: Date.now() + 15 * 60 * 1000, // 15-minute countdown timer
+      timestamp: Date.now() + (note.reminderPeriod || 15) * 60 * 1000, // Dynamic countdown timer based on reminderPeriod
       style: {
         type: AndroidStyle.BIGTEXT, // Valid Notifee style type
         text: note.content || 'No content provided',
@@ -74,7 +88,11 @@ export async function removeLockscreenNote(noteId: string) {
     const pinnedId = storage.getString(NOWBAR_PINNED_KEY);
     // Only cancel the notification if it belongs to the note being deleted/turned off
     if (pinnedId === noteId) {
-      await notifee.cancelNotification(NOWBAR_NOTIFICATION_ID);
+      if (Platform.OS === 'android' && SamsungNowBar) {
+        SamsungNowBar.dismissLiveNote();
+      } else {
+        await notifee.cancelNotification(NOWBAR_NOTIFICATION_ID);
+      }
       storage.delete(NOWBAR_PINNED_KEY);
     }
   } catch (e) {

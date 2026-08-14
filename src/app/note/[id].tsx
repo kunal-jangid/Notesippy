@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, Switch, Alert, SafeAreaView, KeyboardAvoidingView, Platform, Animated, Keyboard, useColorScheme } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Switch, Alert, SafeAreaView, KeyboardAvoidingView, Platform, Animated, Keyboard, useColorScheme, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getNotes, saveNote, deleteNote, pinNoteToWidget, Note, setWidgetNoteMapping, getWidgetNote, syncWidget } from '../../services/notesStore';
@@ -14,6 +14,7 @@ export default function NoteOverlaySheet() {
 
   const [content, setContent] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
+  const [reminderPeriod, setReminderPeriod] = useState(15);
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -63,6 +64,9 @@ export default function NoteOverlaySheet() {
       if (existing) {
         setContent(existing.content);
         setIsUrgent(existing.isUrgent);
+        if (existing.reminderPeriod !== undefined) {
+          setReminderPeriod(existing.reminderPeriod);
+        }
       }
     }
   }, [id]);
@@ -85,6 +89,7 @@ export default function NoteOverlaySheet() {
       title: derivedTitle,
       content,
       isUrgent,
+      reminderPeriod,
       updatedAt: Date.now(),
     };
 
@@ -200,6 +205,49 @@ export default function NoteOverlaySheet() {
             </Text>
           </View>
 
+          {/* Period Selection (Dynamic height, only visible when Live toggle is ON) */}
+          {isUrgent && (
+            <View style={styles.periodContainer}>
+              <Text style={[styles.periodTitle, { color: themeStyles.text }]}>Pill Countdown Duration</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.periodScroll}>
+                {[
+                  { label: '5m', value: 5 },
+                  { label: '15m', value: 15 },
+                  { label: '30m', value: 30 },
+                  { label: '45m', value: 45 },
+                  { label: '1h', value: 60 },
+                  { label: '3h', value: 180 },
+                  { label: '6h', value: 360 },
+                  { label: '12h', value: 720 },
+                ].map((item) => {
+                  const isSelected = reminderPeriod === item.value;
+                  return (
+                    <TouchableOpacity
+                      key={item.value}
+                      style={[
+                        styles.periodChip,
+                        {
+                          backgroundColor: isSelected ? themeStyles.saveBtnBg : themeStyles.btnBg,
+                          borderColor: themeStyles.btnBorder,
+                        },
+                      ]}
+                      onPress={() => setReminderPeriod(item.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.periodChipText,
+                          { color: isSelected ? themeStyles.saveBtnText : themeStyles.text },
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Icon Actions Bar */}
           <View style={styles.actionRow}>
             {/* Live Lockscreen Toggle */}
@@ -297,4 +345,9 @@ const styles = StyleSheet.create({
   iconBtn: { borderWidth: 1, width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   saveBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 },
   saveText: { fontWeight: '700', fontSize: 14 },
+  periodContainer: { marginBottom: 16, width: '100%' },
+  periodTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  periodScroll: { gap: 8, paddingBottom: 4 },
+  periodChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  periodChipText: { fontSize: 12, fontWeight: '700' },
 });
