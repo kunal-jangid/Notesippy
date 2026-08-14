@@ -1,8 +1,10 @@
-const { withProjectBuildGradle, withAndroidManifest, withMainApplication } = require('@expo/config-plugins');
+const { withProjectBuildGradle, withAppBuildGradle, withAndroidManifest, withMainApplication } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
 module.exports = function withNotifee(config) {
+  const packageName = config.android?.package || 'com.kunaljangid2k3.notesippy';
+
   // 1. Add Gradle local Maven path for Notifee
   config = withProjectBuildGradle(config, (config) => {
     if (config.modResults.language === 'groovy') {
@@ -83,7 +85,7 @@ module.exports = function withNotifee(config) {
     notifeeService.$['tools:replace'] = 'android:foregroundServiceType';
 
     // 6. Register custom Samsung Now Bar service in manifest
-    const customServiceName = 'com.kakao.taxi.NowBarService';
+    const customServiceName = `${packageName}.NowBarService`;
     if (!application.service.some((s) => s.$['android:name'] === customServiceName)) {
       application.service.push({
         $: {
@@ -102,11 +104,11 @@ module.exports = function withNotifee(config) {
     let content = config.modResults.contents;
 
     // Add import
-    const importStr = 'import com.kakao.taxi.NowBarPackage';
+    const importStr = `import ${packageName}.NowBarPackage`;
     if (!content.includes(importStr)) {
       content = content.replace(
-        'package com.kakao.taxi',
-        `package com.kakao.taxi\n\n${importStr}`
+        `package ${packageName}`,
+        `package ${packageName}\n\n${importStr}`
       );
     }
 
@@ -123,9 +125,10 @@ module.exports = function withNotifee(config) {
     return config;
   });
 
-  // 8. Generate Java native module files under com.kakao.taxi package
+  // 8. Generate Java native module files under target package directory
   config = withAndroidManifest(config, (config) => {
     const projectRoot = config.modRequest.projectRoot;
+    const packageParts = packageName.split('.');
     const targetDir = path.join(
       projectRoot,
       'android',
@@ -133,9 +136,7 @@ module.exports = function withNotifee(config) {
       'src',
       'main',
       'java',
-      'com',
-      'kakao',
-      'taxi'
+      ...packageParts
     );
 
     if (!fs.existsSync(targetDir)) {
@@ -143,7 +144,7 @@ module.exports = function withNotifee(config) {
     }
 
     // 8a. Write NowBarService.java
-    const serviceCode = `package com.kakao.taxi;
+    const serviceCode = `package ${packageName};
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -261,7 +262,7 @@ public class NowBarService extends Service {
     fs.writeFileSync(path.join(targetDir, 'NowBarService.java'), serviceCode);
 
     // 8b. Write NowBarModule.java
-    const moduleCode = `package com.kakao.taxi;
+    const moduleCode = `package ${packageName};
 
 import android.content.Intent;
 import android.os.Build;
@@ -307,7 +308,7 @@ public class NowBarModule extends ReactContextBaseJavaModule {
     fs.writeFileSync(path.join(targetDir, 'NowBarModule.java'), moduleCode);
 
     // 8c. Write NowBarPackage.java
-    const packageCode = `package com.kakao.taxi;
+    const packageCode = `package ${packageName};
 
 import androidx.annotation.NonNull;
 import com.facebook.react.ReactPackage;

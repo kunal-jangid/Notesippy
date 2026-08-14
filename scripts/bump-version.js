@@ -2,11 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
-const appJsonPath = path.join(__dirname, '..', 'app.json');
 
 // Read files
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
 
 let targetVersion = process.argv[2];
 
@@ -25,11 +23,5 @@ if (!targetVersion) {
 // Update package.json
 packageJson.version = targetVersion;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
-
-// Update app.json
-if (appJson.expo) {
-  appJson.expo.version = targetVersion;
-  fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + '\n', 'utf8');
-}
 
 console.log(targetVersion);
